@@ -4,7 +4,7 @@ import numpy as np
 import requests
 import time
 
-url = 'http://www.imdb.com/search/title?boxoffice_gross_us=1,&release_date={year}'
+url = 'http://www.the-numbers.com/box-office-records/worldwide/all-movies/cumulative/released-in-{year}'
 
 def get_html(year):
     '''Get HTML of list of movies of a given year.
@@ -47,7 +47,7 @@ def main():
     '''Generate dataframe with all the data and save it as csv.'''
     data = pd.DataFrame()
 
-    for i in range(1960, 2017):
+    for i in range(1980, 2017):
         gross = np.mean(get_gross(get_html(i)))
         year_gross_dict = group_data(i, gross)
 

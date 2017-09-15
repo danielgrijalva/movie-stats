@@ -29,17 +29,20 @@ def read_html(html):
     '''
     data = pd.read_html(html, match='Rank')
     box_office = data[0][3][6:50]
-    return box_office
+    theaters = data[0][4][6:50]
+
+    return box_office, theaters
 
 
-def format_currency(dataframe):
+def format_numbers(dataframe):
     '''Remove '$' and ',' from each row.'''
     dataframe = dataframe.replace('[\$,]', '', regex=True).astype(int)
+
     return dataframe
 
-def group_data(year, avg_gross):
+def group_data(year, avg_gross, theaters):
     '''Groups year and average gross into a dict.'''
-    data = {'year': [year,], 'gross': [avg_gross,]}
+    data = {'year': [year,], 'gross': [avg_gross,], 'theaters': [theaters,]}
 
     return data
 
@@ -49,8 +52,11 @@ def main():
     data = pd.DataFrame()
 
     for i in range(1980, 2017):
-        gross = int(format_currency((read_html(get_html(i)))).mean())
-        year_gross_dict = group_data(i, gross)
+        gross, theaters = read_html(get_html(i))
+        gross = int(format_numbers(gross).mean())
+        theaters.fillna(inplace=True, value=0)
+        theaters = int(format_numbers(theaters).mean())
+        year_gross_dict = group_data(i, gross, theaters)
 
         df = pd.DataFrame.from_dict(year_gross_dict)
         data = pd.concat([data, df])

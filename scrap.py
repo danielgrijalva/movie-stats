@@ -2,7 +2,7 @@ import pandas as pd
 import requests
 import time
 
-url = 'http://www.the-numbers.com/box-office-records/worldwide/all-movies/cumulative/released-in-{year}'
+url = 'http://www.boxofficemojo.com/yearly/chart/?yr={year}'
 
 def get_html(year):
     '''Get HTML of list of movies of a given year.
@@ -27,9 +27,8 @@ def read_html(html):
     Returns:
         box_office: DataFrame object containing revenue info of 50 movies.
     '''
-    data = pd.read_html(html)[1]
-    box_office = data[['Domestic Box Office']][:50]
-
+    data = pd.read_html(html, match='Rank')
+    box_office = data[0][3][6:50]
     return box_office
 
 
@@ -57,7 +56,7 @@ def main():
         data = pd.concat([data, df])
 
     data.reset_index(drop=True, inplace=True)
-    data.to_csv('data.csv')
+    data.to_csv('data.csv', index=False)
 
 
 if __name__=='__main__':

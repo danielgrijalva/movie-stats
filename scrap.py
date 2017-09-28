@@ -1,9 +1,10 @@
-import requests
 from bs4 import BeautifulSoup
+import pandas as pd
+import requests
 import time
 import re
 
-url = ('http://www.imdb.com/search/title?count=100&view=simple'
+url = ('http://www.imdb.com/search/title?count=50&view=simple'
     '&boxoffice_gross_us=1,&title_type=feature&release_date={year}')
 
 headers = {'Accept-Language': 'en-US'}
@@ -52,8 +53,10 @@ def scrap_details(soup):
     company = soup.find('a', {'href': re.compile('company'), 'itemprop': 'url'}).find('span').text
     try:
         budget = soup.find('h4', string='Budget:').parent.contents[2].strip()
+        if not '$' in budget:
+            budget = '0'
     except AttributeError:
-        budget = 0
+        budget = '0'
     try:
         runtime = int(soup.find_all('time', {'itemprop': 'duration'})[1].text[:-3])
     except IndexError:
@@ -64,18 +67,29 @@ def scrap_details(soup):
 
     return {'country': country, 'budget': budget, 'gross': gross, 'company': company, 'runtime': runtime}
 
+def write_csv(data):
+    '''Write list of dicts to csv.'''
+    df = pd.DataFrame(data)
+    df.to_csv('movies.csv', index=False)
+
 def main():
+    all_movie_data = []
     for year in range(1986, 2017):
         movies = get_movies(year)
 
         for movie_url in movies:
-            movie = go_to_movie(movie_url)
-            soup = BeautifulSoup(movie, 'html.parser')
-            titlebar = scrap_titlebar(soup)
-            summary = scrap_summary(soup)
-            details = scrap_details(soup)
-            print(details)
+            movie_data = {}
+            movie_html = go_to_movie(movie_url)
+            soup = BeautifulSoup(movie_html, 'html.parser')
+            movie_data.update(scrap_titlebar(soup))
+            movie_data.update(scrap_summary(soup))
+            movie_data.update(scrap_details(soup))
+            all_movie_data.append(movie_data)
+
             time.sleep(1)
+
+    write_csv(all_movie_data)
+
 
 if __name__ == '__main__':
     main()

@@ -7,6 +7,8 @@ url = ('http://www.imdb.com/search/title?count=100&view=simple'
     '&boxoffice_gross_us=1,&title_type=feature&release_date={year}')
 
 headers = {'Accept-Language': 'en-US'}
+
+
 def get_movies(year):
     '''Get list of movies released in <year>.'''
     movies_html = requests.get(url.format(year=year), headers=headers).content
@@ -22,17 +24,18 @@ def go_to_movie(url):
     return movie_html
 
 def scrap_titlebar(soup):
-    '''Get name, rating, genre, release date and score of a movie.'''
+    '''Get name, rating, genre, year, release date and score of a movie.'''
     name = soup.find('h1', {'itemprop': 'name'}).text.strip()[:-7]
+    genre = soup.find('span', {'itemprop': 'genre'}).text
+    score = float(soup.find('span', {'itemprop': 'ratingValue'}).text)
+    released = soup.find('meta', {'itemprop': 'datePublished'})['content']
+    year = soup.find('span', {'id': 'titleYear'}).find('a').text
     try:
         rating = soup.find('meta', {'itemprop': 'contentRating'})['content']
     except TypeError:
         rating = 'Not Rated'
-    genre = soup.find('span', {'itemprop': 'genre'}).text
-    score = float(soup.find('span', {'itemprop': 'ratingValue'}).text)
-    released = soup.find('meta', {'itemprop': 'datePublished'})['content']
 
-    return {'name': name, 'rating': rating, 'genre': genre, 'released': released, 'score': score}
+    return {'name': name, 'rating': rating, 'genre': genre, 'year': year, 'released': released, 'score': score}
 
 def scrap_summary(soup):
     '''Get director, writer and star of a movie.'''
@@ -45,20 +48,24 @@ def scrap_summary(soup):
 def scrap_details(soup):
     '''Get country, budget, gross, production co. and runtime of a movie.'''
     country = soup.find('a', {'href': re.compile('country')}).text
+    gross = soup.find('h4', string='Gross:').parent.contents[2].strip()
+    company = soup.find('a', {'href': re.compile('company'), 'itemprop': 'url'}).find('span').text
     try:
         budget = soup.find('h4', string='Budget:').parent.contents[2].strip()
     except AttributeError:
         budget = 0
-    gross = soup.find('h4', string='Gross:').parent.contents[2].strip()
-    company = soup.find('a', {'href': re.compile('company'), 'itemprop': 'url'}).find('span').text
     try:
         runtime = int(soup.find_all('time', {'itemprop': 'duration'})[1].text[:-3])
     except IndexError:
         runtime = 100
+
+    gross = float(gross.replace('$','').replace(',',''))
+    budget = float(budget.replace('$','').replace(',',''))
+
     return {'country': country, 'budget': budget, 'gross': gross, 'company': company, 'runtime': runtime}
 
 def main():
-    for year in range(1989, 2017):
+    for year in range(1986, 2017):
         movies = get_movies(year)
 
         for movie_url in movies:
@@ -67,6 +74,7 @@ def main():
             titlebar = scrap_titlebar(soup)
             summary = scrap_summary(soup)
             details = scrap_details(soup)
+            print(details)
             time.sleep(1)
 
 if __name__ == '__main__':

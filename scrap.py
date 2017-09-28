@@ -1,69 +1,73 @@
-import pandas as pd
 import requests
+from bs4 import BeautifulSoup
 import time
+import re
 
-url = 'http://www.boxofficemojo.com/yearly/chart/?yr={year}'
+url = ('http://www.imdb.com/search/title?count=100&view=simple'
+    '&boxoffice_gross_us=1,&title_type=feature&release_date={year}')
 
-def get_html(year):
-    '''Get HTML of list of movies of a given year.
+headers = {'Accept-Language': 'en-US'}
+def get_movies(year):
+    '''Get list of movies released in <year>.'''
+    movies_html = requests.get(url.format(year=year), headers=headers).content
+    soup = BeautifulSoup(movies_html, 'html.parser')
+    movies = soup.findAll('a', {'href': re.compile('adv_li_i$')})
 
-    Args:
-        year: a year (int).
+    return ['http://www.imdb.com' + m['href'] for m in movies]
 
-    Returns:
-        html: HTML string.
-    '''
-    html = requests.get(url.format(year=year)).content
+def go_to_movie(url):
+    '''Get IMDb page of a movie.'''
+    movie_html = requests.get(url, headers=headers).content
 
-    return html
+    return movie_html
 
+def scrap_titlebar(soup):
+    '''Get name, rating, genre, release date and score of a movie.'''
+    name = soup.find('h1', {'itemprop': 'name'}).text.strip()[:-7]
+    try:
+        rating = soup.find('meta', {'itemprop': 'contentRating'})['content']
+    except TypeError:
+        rating = 'Not Rated'
+    genre = soup.find('span', {'itemprop': 'genre'}).text
+    score = float(soup.find('span', {'itemprop': 'ratingValue'}).text)
+    released = soup.find('meta', {'itemprop': 'datePublished'})['content']
 
-def read_html(html):
-    '''Using pandas.read_html() to extract table inside HTML string.
+    return {'name': name, 'rating': rating, 'genre': genre, 'released': released, 'score': score}
 
-    Args:
-        html: HTML string returned from get_html()
+def scrap_summary(soup):
+    '''Get director, writer and star of a movie.'''
+    director = soup.find('span', {'itemprop': 'director'}).find('span').text
+    writer = soup.find('span', {'itemprop': 'creator'}).find('span').text
+    star = soup.find('span', {'itemprop': 'actors'}).find('span').text
 
-    Returns:
-        box_office: DataFrame object containing revenue info of 50 movies.
-    '''
-    data = pd.read_html(html, match='Rank')
-    box_office = data[0][3][6:50]
-    theaters = data[0][4][6:50]
+    return {'director': director, 'writer': writer, 'star': star}
 
-    return box_office, theaters
-
-
-def format_numbers(dataframe):
-    '''Remove '$' and ',' from each row.'''
-    dataframe = dataframe.replace('[\$,]', '', regex=True).astype(int)
-
-    return dataframe
-
-def group_data(year, avg_gross, theaters):
-    '''Groups year and average gross into a dict.'''
-    data = {'year': [year,], 'gross': [avg_gross,], 'theaters': [theaters,]}
-
-    return data
-
+def scrap_details(soup):
+    '''Get country, budget, gross, production co. and runtime of a movie.'''
+    country = soup.find('a', {'href': re.compile('country')}).text
+    try:
+        budget = soup.find('h4', string='Budget:').parent.contents[2].strip()
+    except AttributeError:
+        budget = 0
+    gross = soup.find('h4', string='Gross:').parent.contents[2].strip()
+    company = soup.find('a', {'href': re.compile('company'), 'itemprop': 'url'}).find('span').text
+    try:
+        runtime = int(soup.find_all('time', {'itemprop': 'duration'})[1].text[:-3])
+    except IndexError:
+        runtime = 100
+    return {'country': country, 'budget': budget, 'gross': gross, 'company': company, 'runtime': runtime}
 
 def main():
+    for year in range(1989, 2017):
+        movies = get_movies(year)
 
-    data = pd.DataFrame()
+        for movie_url in movies:
+            movie = go_to_movie(movie_url)
+            soup = BeautifulSoup(movie, 'html.parser')
+            titlebar = scrap_titlebar(soup)
+            summary = scrap_summary(soup)
+            details = scrap_details(soup)
+            time.sleep(1)
 
-    for i in range(1980, 2017):
-        gross, theaters = read_html(get_html(i))
-        gross = int(format_numbers(gross).mean())
-        theaters.fillna(inplace=True, value=0)
-        theaters = int(format_numbers(theaters).mean())
-        year_gross_dict = group_data(i, gross, theaters)
-
-        df = pd.DataFrame.from_dict(year_gross_dict)
-        data = pd.concat([data, df])
-
-    data.reset_index(drop=True, inplace=True)
-    data.to_csv('data.csv', index=False)
-
-
-if __name__=='__main__':
+if __name__ == '__main__':
     main()

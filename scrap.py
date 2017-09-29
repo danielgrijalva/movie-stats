@@ -4,7 +4,7 @@ import requests
 import time
 import re
 
-url = ('http://www.imdb.com/search/title?count=50&view=simple'
+url = ('http://www.imdb.com/search/title?count=100&view=simple'
     '&boxoffice_gross_us=1,&title_type=feature&release_date={year}')
 
 headers = {'Accept-Language': 'en-US'}

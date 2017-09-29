@@ -48,7 +48,7 @@ def scrap_summary(soup):
 
 def scrap_details(soup):
     '''Get country, budget, gross, production co. and runtime of a movie.'''
-    country = soup.find('a', {'href': re.compile('country')}).text
+    country = soup.find('a', {'href': re.compile('country_of_origin')}).text
     gross = soup.find('h4', string='Gross:').parent.contents[2].strip()
     company = soup.find('a', {'href': re.compile('company'), 'itemprop': 'url'}).find('span').text
     try:

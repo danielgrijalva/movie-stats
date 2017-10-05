@@ -10,9 +10,9 @@ movie industry, and get answers.
   
 ### Content  
 
-There are 3100 movies in the dataset (100 movies per year, 1986-2016). Each movie has the following attributes:  
+There are 6820 movies in the dataset (220 movies per year, 1986-2016). Each movie has the following attributes:  
 
-- budget: the budget of a movie. Some old movies don't have this, so it appears as 0
+- budget: the budget of a movie. Some movies don't have this, so it appears as 0
 
 - company: the production company
 

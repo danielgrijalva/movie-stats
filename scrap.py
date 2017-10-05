@@ -4,7 +4,7 @@ import requests
 import time
 import re
 
-url = ('http://www.imdb.com/search/title?count=100&view=simple'
+url = ('http://www.imdb.com/search/title?count=220&view=simple'
     '&boxoffice_gross_us=1,&title_type=feature&release_date={year}')
 
 headers = {'Accept-Language': 'en-US'}
@@ -34,14 +34,17 @@ def scrap_titlebar(soup):
     try:
         rating = soup.find('meta', {'itemprop': 'contentRating'})['content']
     except TypeError:
-        rating = 'Not Rated'
+        rating = 'Not specified'
 
     return {'name': name, 'rating': rating, 'genre': genre, 'year': year, 'released': released, 'score': score}
 
 def scrap_summary(soup):
     '''Get director, writer and star of a movie.'''
     director = soup.find('span', {'itemprop': 'director'}).find('span').text
-    writer = soup.find('span', {'itemprop': 'creator'}).find('span').text
+    try:
+        writer = soup.find('span', {'itemprop': 'creator'}).find('span').text
+    except AttributeError:
+        writer = 'Not specified'
     star = soup.find('span', {'itemprop': 'actors'}).find('span').text
 
     return {'director': director, 'writer': writer, 'star': star}
@@ -50,7 +53,10 @@ def scrap_details(soup):
     '''Get country, budget, gross, production co. and runtime of a movie.'''
     country = soup.find('a', {'href': re.compile('country_of_origin')}).text
     gross = soup.find('h4', string='Gross:').parent.contents[2].strip()
-    company = soup.find('a', {'href': re.compile('company'), 'itemprop': 'url'}).find('span').text
+    try:
+        company = soup.find('a', {'href': re.compile('company'), 'itemprop': 'url'}).find('span').text
+    except AttributeError:
+        company = 'Not specified'
     try:
         budget = soup.find('h4', string='Budget:').parent.contents[2].strip()
         if not '$' in budget:
@@ -86,7 +92,7 @@ def main():
             movie_data.update(scrap_details(soup))
             all_movie_data.append(movie_data)
 
-            time.sleep(1)
+        print(year, 'done.')
 
     write_csv(all_movie_data)
 

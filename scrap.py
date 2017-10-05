@@ -25,10 +25,11 @@ def go_to_movie(url):
     return movie_html
 
 def scrap_titlebar(soup):
-    '''Get name, rating, genre, year, release date and score of a movie.'''
+    '''Get name, rating, genre, year, release date, score and votes of a movie.'''
     name = soup.find('h1', {'itemprop': 'name'}).text.strip()[:-7]
     genre = soup.find('span', {'itemprop': 'genre'}).text
     score = float(soup.find('span', {'itemprop': 'ratingValue'}).text)
+    votes = int(soup.find('span', {'itemprop': 'ratingCount'}).text.replace(',',''))
     released = soup.find('meta', {'itemprop': 'datePublished'})['content']
     year = soup.find('span', {'id': 'titleYear'}).find('a').text
     try:
@@ -36,7 +37,7 @@ def scrap_titlebar(soup):
     except TypeError:
         rating = 'Not specified'
 
-    return {'name': name, 'rating': rating, 'genre': genre, 'year': year, 'released': released, 'score': score}
+    return {'name': name, 'rating': rating, 'genre': genre, 'year': year, 'released': released, 'score': score, 'votes':votes}
 
 def scrap_summary(soup):
     '''Get director, writer and star of a movie.'''

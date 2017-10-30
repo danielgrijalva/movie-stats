@@ -34,6 +34,8 @@ There are 6820 movies in the dataset (220 movies per year, 1986-2016). Each movi
 
 - score: IMDb user rating
 
+- votes: number of user votes
+
 - star: main actor/actress
 
 - writer: writer of the movie

@@ -11,7 +11,7 @@ pandas==0.20.3
 pyparsing==2.2.0
 python-dateutil==2.6.1
 pytz==2017.2
-requests==2.18.4
+requests>=2.20.0
 six==1.10.0
-urllib3==1.22
+urllib3>=1.24.2
 webencodings==0.5.1
